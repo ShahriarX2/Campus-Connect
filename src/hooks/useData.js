@@ -6,6 +6,10 @@ export const useSupabaseQuery = (tableName, query = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Extract complex dependency for proper ESLint checking
+  const queryString = JSON.stringify(query);
+  const { eq: queryEq, order: queryOrder, limit: queryLimit } = query;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -14,20 +18,20 @@ export const useSupabaseQuery = (tableName, query = {}) => {
         let supabaseQuery = supabase.from(tableName).select('*');
 
         // Apply filters if provided
-        if (query.eq) {
-          Object.entries(query.eq).forEach(([column, value]) => {
+        if (queryEq) {
+          Object.entries(queryEq).forEach(([column, value]) => {
             supabaseQuery = supabaseQuery.eq(column, value);
           });
         }
 
-        if (query.order) {
-          supabaseQuery = supabaseQuery.order(query.order.column, { 
-            ascending: query.order.ascending !== false 
+        if (queryOrder) {
+          supabaseQuery = supabaseQuery.order(queryOrder.column, { 
+            ascending: queryOrder.ascending !== false 
           });
         }
 
-        if (query.limit) {
-          supabaseQuery = supabaseQuery.limit(query.limit);
+        if (queryLimit) {
+          supabaseQuery = supabaseQuery.limit(queryLimit);
         }
 
         const { data: result, error } = await supabaseQuery;
@@ -45,7 +49,7 @@ export const useSupabaseQuery = (tableName, query = {}) => {
     };
 
     fetchData();
-  }, [tableName, JSON.stringify(query)]);
+  }, [tableName, queryString, queryEq, queryOrder, queryLimit]);
 
   const refetch = async () => {
     setLoading(true);
@@ -61,6 +65,9 @@ export const useStudents = (filters = {}) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Extract complex dependency
+  const filtersString = JSON.stringify(filters);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -123,7 +130,7 @@ export const useStudents = (filters = {}) => {
     };
 
     fetchStudents();
-  }, [JSON.stringify(filters)]);
+  }, [filtersString]);
 
   return { students, loading, error };
 };
@@ -133,6 +140,9 @@ export const useEvents = (filters = {}) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Extract complex dependency
+  const filtersString = JSON.stringify(filters);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -180,7 +190,7 @@ export const useEvents = (filters = {}) => {
     };
 
     fetchEvents();
-  }, [JSON.stringify(filters)]);
+  }, [filtersString]);
 
   return { events, loading, error };
 };

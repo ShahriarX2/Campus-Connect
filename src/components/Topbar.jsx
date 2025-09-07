@@ -3,13 +3,46 @@ import {
   BellIcon, 
   MagnifyingGlassIcon,
   SunIcon,
-  MoonIcon
+  MoonIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import PropTypes from 'prop-types';
 
 export const Topbar = ({ onToggleSidebar }) => {
   const { isDark, toggleTheme } = useTheme();
+  const { user, profile, signOut } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
+  const userMenuRef = useRef(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch {
+      toast.error('Error logging out');
+    }
+  };
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
@@ -59,15 +92,60 @@ export const Topbar = ({ onToggleSidebar }) => {
           </button>
 
           {/* User avatar */}
-          <div className="relative">
-            <button className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <div className="relative" ref={userMenuRef}>
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-white font-medium text-sm">JD</span>
+                <span className="text-white font-medium text-sm">
+                  {profile?.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase() : user?.email[0].toUpperCase()}
+                </span>
               </div>
               <span className="hidden md:block text-gray-700 dark:text-gray-300 font-medium">
-                John Doe
+                {profile?.name || user?.email}
               </span>
             </button>
+            
+            {/* User dropdown menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+                <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {profile?.name || 'User'}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {user?.email}
+                  </p>
+                  {profile?.role && (
+                    <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full capitalize">
+                      {profile.role}
+                    </span>
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    navigate('/profile');
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  Profile
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                >
+                  <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

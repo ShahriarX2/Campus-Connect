@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { PlusIcon, CalendarIcon, MapPinIcon, UsersIcon } from '@heroicons/react/24/outline';
-import { useTheme } from '../context/ThemeContext';
 import PropTypes from 'prop-types';
 
 const EventCard = ({ event }) => {
-  const { isDark } = useTheme();
-  
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-start justify-between mb-4">
