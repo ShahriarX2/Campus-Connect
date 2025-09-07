@@ -6,7 +6,8 @@ import {
   BookOpenIcon,
   CogIcon,
   ChatBubbleLeftIcon,
-  SpeakerWaveIcon
+  SpeakerWaveIcon,
+  ChatBubbleLeftEllipsisIcon
 } from '@heroicons/react/24/outline';
 import PropTypes from 'prop-types';
 
@@ -15,6 +16,7 @@ const navigation = [
   { name: 'Students', href: '/students', icon: UsersIcon },
   { name: 'Events', href: '/events', icon: CalendarIcon },
   { name: 'Messages', href: '/messages', icon: ChatBubbleLeftIcon },
+  { name: 'Forum', href: '/forum', icon: ChatBubbleLeftEllipsisIcon },
   { name: 'Notices', href: '/notices', icon: SpeakerWaveIcon },
   { name: 'Resources', href: '/resources', icon: BookOpenIcon },
   { name: 'Settings', href: '/settings', icon: CogIcon },

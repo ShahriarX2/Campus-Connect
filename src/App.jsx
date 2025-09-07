@@ -7,6 +7,8 @@ import { Students } from './pages/Students';
 import { Events } from './pages/Events';
 import { Messages } from './pages/Messages';
 import { Notices } from './pages/Notices';
+import { Forum } from './pages/Forum';
+import PostDetail from './components/PostDetail';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
@@ -57,6 +59,18 @@ function App() {
               <Route path="/notices" element={
                 <PrivateRoute>
                   <Notices />
+                </PrivateRoute>
+              } />
+              
+              <Route path="/forum" element={
+                <PrivateRoute>
+                  <Forum />
+                </PrivateRoute>
+              } />
+              
+              <Route path="/forum/:id" element={
+                <PrivateRoute>
+                  <PostDetail />
                 </PrivateRoute>
               } />
               
