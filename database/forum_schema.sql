@@ -436,33 +436,86 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- SAMPLE DATA (OPTIONAL)
 -- ===================================================
 
--- Insert sample forum posts (only if tables are empty)
-INSERT INTO forum_posts (title, content, tag, posted_by)
-SELECT 
-    'Welcome to the Campus Forum!',
-    'This is our new discussion forum where students, teachers, and staff can engage in meaningful conversations about academic life, campus events, and various topics of interest. Feel free to share your thoughts, ask questions, and help build our community!',
-    'general',
-    (SELECT id FROM profiles WHERE role IN ('teacher', 'admin') LIMIT 1)
-WHERE NOT EXISTS (SELECT 1 FROM forum_posts LIMIT 1)
-AND EXISTS (SELECT 1 FROM profiles WHERE role IN ('teacher', 'admin'));
+-- Insert sample forum posts (only if tables are empty and users exist)
+-- Note: These are optional sample posts that will only be created if the conditions are met
 
-INSERT INTO forum_posts (title, content, tag, posted_by)
-SELECT 
-    'Study Tips for Final Exams',
-    'With final exams approaching, I thought I''d share some study techniques that have worked well for me: 1) Create a study schedule and stick to it, 2) Use active recall instead of just re-reading notes, 3) Form study groups with classmates, 4) Take regular breaks to avoid burnout. What study methods work best for you?',
-    'academic',
-    (SELECT id FROM profiles WHERE role = 'student' LIMIT 1)
-WHERE NOT EXISTS (SELECT 1 FROM forum_posts WHERE title = 'Study Tips for Final Exams')
-AND EXISTS (SELECT 1 FROM profiles WHERE role = 'student');
+-- Sample post 1: Welcome post by admin/teacher
+DO $$
+DECLARE
+    sample_user_id UUID;
+BEGIN
+    -- Find a teacher or admin user
+    SELECT id INTO sample_user_id 
+    FROM profiles 
+    WHERE role IN ('teacher', 'admin') 
+    LIMIT 1;
+    
+    -- Only insert if we found a user and no posts exist
+    IF sample_user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM forum_posts LIMIT 1) THEN
+        INSERT INTO forum_posts (title, content, tag, posted_by)
+        VALUES (
+            'Welcome to the Campus Forum!',
+            'This is our new discussion forum where students, teachers, and staff can engage in meaningful conversations about academic life, campus events, and various topics of interest. Feel free to share your thoughts, ask questions, and help build our community!',
+            'general',
+            sample_user_id
+        );
+    END IF;
+END $$;
 
-INSERT INTO forum_posts (title, content, tag, posted_by)
-SELECT 
-    'Campus WiFi Issues',
-    'Has anyone else been experiencing slow internet speeds in the library lately? It''s been really difficult to access online resources for research. Are there any alternative study spaces with better connectivity?',
-    'technical',
-    (SELECT id FROM profiles WHERE role = 'student' OFFSET 1 LIMIT 1)
-WHERE NOT EXISTS (SELECT 1 FROM forum_posts WHERE title = 'Campus WiFi Issues')
-AND EXISTS (SELECT 1 FROM profiles WHERE role = 'student');
+-- Sample post 2: Study tips by student
+DO $$
+DECLARE
+    sample_user_id UUID;
+BEGIN
+    -- Find a student user
+    SELECT id INTO sample_user_id 
+    FROM profiles 
+    WHERE role = 'student' 
+    LIMIT 1;
+    
+    -- Only insert if we found a user and this specific post doesn't exist
+    IF sample_user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM forum_posts WHERE title = 'Study Tips for Final Exams') THEN
+        INSERT INTO forum_posts (title, content, tag, posted_by)
+        VALUES (
+            'Study Tips for Final Exams',
+            'With final exams approaching, I thought I''d share some study techniques that have worked well for me: 1) Create a study schedule and stick to it, 2) Use active recall instead of just re-reading notes, 3) Form study groups with classmates, 4) Take regular breaks to avoid burnout. What study methods work best for you?',
+            'academic',
+            sample_user_id
+        );
+    END IF;
+END $$;
+
+-- Sample post 3: Technical issue by another student
+DO $$
+DECLARE
+    sample_user_id UUID;
+BEGIN
+    -- Find a different student user (using OFFSET)
+    SELECT id INTO sample_user_id 
+    FROM profiles 
+    WHERE role = 'student' 
+    OFFSET 1
+    LIMIT 1;
+    
+    -- If no second student found, use any student
+    IF sample_user_id IS NULL THEN
+        SELECT id INTO sample_user_id 
+        FROM profiles 
+        WHERE role = 'student' 
+        LIMIT 1;
+    END IF;
+    
+    -- Only insert if we found a user and this specific post doesn't exist
+    IF sample_user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM forum_posts WHERE title = 'Campus WiFi Issues') THEN
+        INSERT INTO forum_posts (title, content, tag, posted_by)
+        VALUES (
+            'Campus WiFi Issues',
+            'Has anyone else been experiencing slow internet speeds in the library lately? It''s been really difficult to access online resources for research. Are there any alternative study spaces with better connectivity?',
+            'technical',
+            sample_user_id
+        );
+    END IF;
+END $$;
 
 -- ===================================================
 -- COMMENTS AND DOCUMENTATION

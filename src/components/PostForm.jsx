@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { XMarkIcon, ChatBubbleLeftTextIcon, TagIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChatBubbleLeftIcon, TagIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import PropTypes from 'prop-types';
@@ -152,7 +152,7 @@ const PostForm = ({ isOpen, onClose, onSubmit, editingPost = null }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-3">
-                    <ChatBubbleLeftTextIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <ChatBubbleLeftIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       {editingPost ? 'Edit Post' : 'Create New Post'}
                     </h3>

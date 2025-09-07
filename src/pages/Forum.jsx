@@ -4,12 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { 
   PlusIcon, 
-  ChatBubbleLeftTextIcon, 
+  ChatBubbleLeftIcon, 
   MagnifyingGlassIcon,
   TagIcon,
   FunnelIcon,
   HandThumbUpIcon,
-  ChatBubbleLeftIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
 import PostItem from '../components/PostItem';
@@ -294,7 +293,7 @@ export const Forum = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <ChatBubbleLeftTextIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <ChatBubbleLeftIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Campus Forum
@@ -397,7 +396,7 @@ export const Forum = () => {
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <ChatBubbleLeftTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <ChatBubbleLeftIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {searchQuery.trim() || selectedTag ? 'No posts found' : 'No posts yet'}
             </h3>
