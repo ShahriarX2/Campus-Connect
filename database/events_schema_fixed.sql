@@ -1,8 +1,9 @@
 -- ===================================================
--- CAMPUS CONNECT - EVENTS SYSTEM SCHEMA
+-- CAMPUS CONNECT - EVENTS SYSTEM SCHEMA (FIXED)
 -- ===================================================
 -- This script creates the events and event_attendees tables with
 -- constraints, indexes, and Row Level Security (RLS) policies.
+-- Fixed: Removed CURRENT_DATE from index predicates and constraints
 
 -- Create the events table
 CREATE TABLE IF NOT EXISTS events (
@@ -21,8 +22,7 @@ CREATE TABLE IF NOT EXISTS events (
     -- Audit fields
     created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
     
     -- Note: Removed future_event_date constraint as it uses CURRENT_DATE
     -- This validation will be handled in the application layer
@@ -388,9 +388,19 @@ COMMENT ON VIEW upcoming_events IS 'Events happening in the next 30 days';
 
 -- Optimizations included:
 -- 1. Composite indexes for common query patterns
--- 2. Partial indexes for upcoming events
--- 3. Views with pre-calculated counts
--- 4. Functions for common operations
--- 5. Proper foreign key constraints for data integrity
+-- 2. Views with pre-calculated counts
+-- 3. Functions for common operations
+-- 4. Proper foreign key constraints for data integrity
+-- 5. Date validation moved to application layer for flexibility
+
+-- ===================================================
+-- FIXES APPLIED
+-- ===================================================
+
+-- 1. Removed CURRENT_DATE from index predicates (caused ERROR: 42P17)
+-- 2. Removed CURRENT_DATE constraint from table (moved to application)
+-- 3. Added is_future_event_date() function for application-level validation
+-- 4. Kept CURRENT_DATE in views (allowed in SELECT statements)
+-- 5. Maintained all functionality while fixing immutability issues
 
 -- End of schema
