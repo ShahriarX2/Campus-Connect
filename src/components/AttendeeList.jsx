@@ -18,13 +18,6 @@ const AttendeeList = ({ isOpen, onClose, eventId, eventTitle }) => {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'going', 'interested'
 
-  // Fetch attendees when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      fetchAttendees();
-    }
-  }, [isOpen, fetchAttendees]);
-
   // Fetch attendees with profile information
   const fetchAttendees = useCallback(async () => {
     if (!eventId) return;
@@ -55,6 +48,13 @@ const AttendeeList = ({ isOpen, onClose, eventId, eventTitle }) => {
       setLoading(false);
     }
   }, [eventId]);
+
+  // Fetch attendees when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchAttendees();
+    }
+  }, [isOpen, fetchAttendees]);
 
   // Filter attendees based on status
   const filteredAttendees = filter === 'all' 
