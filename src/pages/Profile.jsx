@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
-import { UserIcon, EnvelopeIcon, AcademicCapIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { UserIcon, EnvelopeIcon, AcademicCapIcon, BuildingOfficeIcon, CameraIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 export const Profile = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, updateProfile, uploadAvatar } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     department: profile?.department || '',
     year: profile?.year || '',
     bio: profile?.bio || '',
   });
+
+  // Update form data when profile changes
+  useEffect(() => {
+    setFormData({
+      name: profile?.name || '',
+      department: profile?.department || '',
+      year: profile?.year || '',
+      bio: profile?.bio || '',
+    });
+  }, [profile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -23,13 +36,58 @@ export const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    setIsSaving(true);
     try {
-      // Here you would typically update the profile in Supabase
-      // For now, we'll just show a success message
-      toast.success('Profile updated successfully!');
-      setIsEditing(false);
+      const { error } = await updateProfile(formData);
+      
+      if (error) {
+        toast.error(`Failed to update profile: ${error}`);
+      } else {
+        toast.success('Profile updated successfully!');
+        setIsEditing(false);
+      }
     } catch (error) {
-      toast.error(`Failed to update profile : ${error}`);
+      toast.error(`Failed to update profile: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const { error } = await uploadAvatar(file);
+      
+      if (error) {
+        toast.error(`Failed to upload avatar: ${error}`);
+      } else {
+        toast.success('Avatar updated successfully!');
+      }
+    } catch (error) {
+      toast.error(`Failed to upload avatar: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -79,12 +137,47 @@ export const Profile = () => {
           <div className="px-6 py-8">
             <div className="flex items-center space-x-6">
               {/* Avatar */}
-              <div className="flex-shrink-0">
-                <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">
-                    {getInitials(profile?.name)}
-                  </span>
+              <div className="flex-shrink-0 relative group">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile?.name || 'User Avatar'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+                      <span className="text-white font-bold text-2xl">
+                        {getInitials(profile?.name)}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Avatar Upload Button */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full transition-all duration-200">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="opacity-0 group-hover:opacity-100 bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Upload new avatar"
+                  >
+                    {isUploading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    ) : (
+                      <CameraIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                    )}
+                  </button>
+                </div>
+                
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
 
               {/* User Info */}
@@ -123,9 +216,17 @@ export const Profile = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={handleSaveProfile}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                      disabled={isSaving}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center"
                     >
-                      Save
+                      {isSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        'Save'
+                      )}
                     </button>
                     <button
                       onClick={handleCancel}

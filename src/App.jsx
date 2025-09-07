@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Students } from './pages/Students';
 import { Events } from './pages/Events';
 import { Messages } from './pages/Messages';
+import { Notices } from './pages/Notices';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
@@ -50,6 +51,12 @@ function App() {
               <Route path="/messages" element={
                 <PrivateRoute>
                   <Messages />
+                </PrivateRoute>
+              } />
+              
+              <Route path="/notices" element={
+                <PrivateRoute>
+                  <Notices />
                 </PrivateRoute>
               } />
               

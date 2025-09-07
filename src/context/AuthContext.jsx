@@ -31,8 +31,7 @@ export const AuthProvider = ({ children }) => {
   
   // Note: Emergency timeout removed - using safety timeout in auth initialization instead
 
-  // Create user profile in profiles table (currently unused but kept for future use)
-  // eslint-disable-next-line no-unused-vars
+  // Create user profile in profiles table
   const createUserProfile = async (userId, userData = {}) => {
     try {
       const { data, error } = await supabase
@@ -336,20 +335,36 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Create profile record if user was created successfully
-      if (data.user && !data.user.email_confirmed_at) {
-        // User needs to confirm email first, profile will be created on first login
-        console.log('Profile will be created after email confirmation');
-        AuthSentryUtils.trackAuthEvent('sign_up_success_pending_confirmation', { 
-          userId: data.user.id,
-          email,
-          duration 
-        });
-      } else {
-        AuthSentryUtils.trackAuthEvent('sign_up_success', { 
-          userId: data.user?.id,
-          email,
-          duration 
-        });
+      if (data.user) {
+        try {
+          // Create profile immediately after user creation
+          const profileData = await createUserProfile(data.user.id, metadata);
+          if (profileData) {
+            console.log('Profile created successfully:', profileData.id);
+            AuthSentryUtils.trackAuthEvent('profile_created_on_signup', {
+              userId: data.user.id,
+              role: metadata.role || 'student'
+            });
+          }
+        } catch (profileError) {
+          console.warn('Failed to create profile on signup:', profileError.message);
+          // Don't fail the signup if profile creation fails
+        }
+        
+        if (!data.user.email_confirmed_at) {
+          console.log('Account created successfully, please verify email');
+          AuthSentryUtils.trackAuthEvent('sign_up_success_pending_confirmation', { 
+            userId: data.user.id,
+            email,
+            duration 
+          });
+        } else {
+          AuthSentryUtils.trackAuthEvent('sign_up_success', { 
+            userId: data.user?.id,
+            email,
+            duration 
+          });
+        }
       }
       
       AuthSentryUtils.trackAuthPerformance('sign_up', duration, true);
@@ -423,6 +438,85 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update profile data
+  const updateProfile = async (profileData) => {
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      AuthSentryUtils.trackAuthEvent('profile_updated', { 
+        userId: user.id, 
+        fields: Object.keys(profileData) 
+      });
+      return { data, error: null };
+    } catch (error) {
+      AuthSentryUtils.trackAuthError(error, { 
+        operation: 'profile_update', 
+        userId: user.id 
+      });
+      return { data: null, error: error.message };
+    }
+  };
+
+  // Upload avatar to Supabase Storage
+  const uploadAvatar = async (file) => {
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      AuthSentryUtils.trackAuthEvent('avatar_uploaded', { 
+        userId: user.id, 
+        fileName 
+      });
+      return { data: publicUrl, error: null };
+    } catch (error) {
+      AuthSentryUtils.trackAuthError(error, { 
+        operation: 'avatar_upload', 
+        userId: user.id 
+      });
+      return { data: null, error: error.message };
+    }
+  };
+
   // Refresh profile data
   const refreshProfile = async () => {
     if (user?.id) {
@@ -438,6 +532,8 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     fetchUserProfile,
+    updateProfile,
+    uploadAvatar,
     refreshProfile,
   };
 
